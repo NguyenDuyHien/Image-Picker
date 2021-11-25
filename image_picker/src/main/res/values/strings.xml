@@ -6,7 +6,8 @@
     <string name="camera">Camera</string>
     <string name="msg_no_camera">Không tìm thấy camera</string>
     <string name="title_select_image">Ấn vào hình để chọn</string>
-    <string name="msg_empty_image">Không tìm thấy hình ảnh</string>
+    <string name="msg_empty_image">Không tìm thấy hình ảnh!</string>
+    <string name="msg_load_image_error">Xảy ra lỗi khi tìm hình ảnh!</string>
     <string name="gif_type">GIF</string>
     <string name="msg_maximum_image_reach">Vượt quá số lượng hình cho phép!</string>
     <string name="msg_no_permission">Vui lòng cung cấp quyền đọc bộ nhớ để chọn ảnh</string>

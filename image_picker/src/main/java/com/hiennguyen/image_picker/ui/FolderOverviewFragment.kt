@@ -1,7 +1,6 @@
 package com.hiennguyen.image_picker.ui
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,11 +29,9 @@ class FolderOverviewFragment : BaseFragment<FragmentFolderOverviewBinding, Image
     override val viewModel by activityViewModels<ImagePickerViewModel>()
     override val bindingInflater: (LayoutInflater, ViewGroup?, Boolean) -> FragmentFolderOverviewBinding = FragmentFolderOverviewBinding::inflate
     private val imageFolderAdapter by lazy { ImageFolderAdapter() }
-    private var snackBar: Snackbar? = null
 
     private val activityForResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
                 viewModel.dispatchIntent(GetImageData(viewModel.config()))
             }
@@ -73,7 +70,7 @@ class FolderOverviewFragment : BaseFragment<FragmentFolderOverviewBinding, Image
                 }
             }
             is Error -> {
-                showData(false)
+                showData(isShow = false, isError = true)
                 Timber.d("Image error $message")
             }
             is Done -> showLoading(false)
@@ -90,25 +87,23 @@ class FolderOverviewFragment : BaseFragment<FragmentFolderOverviewBinding, Image
         }
     }
 
-    private fun showData(isShow: Boolean) {
+    private fun showData(isShow: Boolean, isError: Boolean = false) {
         if (isShow) {
-            binding.tvEmpty.gone()
+            binding.tvInfo.gone()
             binding.rvImageFolder.visible()
         } else {
-            binding.tvEmpty.visible()
+            binding.tvInfo.text = if (isError) getString(R.string.msg_load_image_error) else getString(R.string.msg_empty_image)
+            binding.tvInfo.visible()
             binding.rvImageFolder.gone()
         }
     }
 
     private fun showNoPermissionNotify() {
-        if (snackBar == null) {
-            snackBar = Snackbar.make(binding.root, R.string.msg_no_permission, Snackbar.LENGTH_INDEFINITE)
-                .setAction(R.string.ok) {
-                    activityForResultLauncher.launch(getAppSettingsIntent())
-                    snackBar?.dismiss()
-                }
-        }
-        snackBar?.show()
+        Snackbar
+            .make(binding.root, R.string.msg_no_permission, Snackbar.LENGTH_INDEFINITE)
+            .setAction(R.string.ok) {
+                activityForResultLauncher.launch(getAppSettingsIntent())
+            }.show()
     }
     //endregion
 }

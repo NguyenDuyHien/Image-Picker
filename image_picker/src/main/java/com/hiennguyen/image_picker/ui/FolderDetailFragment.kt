@@ -44,6 +44,7 @@ class FolderDetailFragment : BaseFragment<FragmentFolderDetailBinding, ImagePick
         binding.rvImage.apply {
             val spanCount = (layoutManager as? GridLayoutManager)?.spanCount ?: 1
             addItemDecoration(GridSpacingItemDecoration(spanCount, resources.getDimensionPixelSize(R.dimen.item_padding)))
+            itemAnimator = null
             adapter = imageAdapter
         }
     }
@@ -65,7 +66,6 @@ class FolderDetailFragment : BaseFragment<FragmentFolderDetailBinding, ImagePick
         when (this) {
             is Loading -> showLoading(true)
             is ResultImageData -> {
-                Timber.d("Image data $data")
                 val selectedFolder = data.firstOrNull { it.bucketId == viewModel.bucketId() }
                 if (selectedFolder == null || selectedFolder.images.isEmpty()) {
                     showData(false)
@@ -75,7 +75,7 @@ class FolderDetailFragment : BaseFragment<FragmentFolderDetailBinding, ImagePick
                 }
             }
             is Error -> {
-                showData(false)
+                showData(isShow = false, isError = true)
                 Timber.d("Image error $message")
             }
             is Done -> showLoading(false)
@@ -93,12 +93,13 @@ class FolderDetailFragment : BaseFragment<FragmentFolderDetailBinding, ImagePick
         }
     }
 
-    private fun showData(isShow: Boolean) {
+    private fun showData(isShow: Boolean, isError: Boolean = false) {
         if (isShow) {
-            binding.tvEmpty.gone()
+            binding.tvInfo.gone()
             binding.rvImage.visible()
         } else {
-            binding.tvEmpty.visible()
+            binding.tvInfo.text = if (isError) getString(R.string.msg_load_image_error) else getString(R.string.msg_empty_image)
+            binding.tvInfo.visible()
             binding.rvImage.gone()
         }
     }

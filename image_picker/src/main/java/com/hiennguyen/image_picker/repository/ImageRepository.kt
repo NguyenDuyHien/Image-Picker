@@ -6,6 +6,8 @@ import android.provider.MediaStore
 import com.hiennguyen.image_picker.config.ImagePickerConfig
 import com.hiennguyen.image_picker.model.Image
 import com.hiennguyen.image_picker.model.ImageFolder
+import com.hiennguyen.image_picker.util.Utils.checkFile
+import com.hiennguyen.image_picker.util.Utils.getFileName
 import com.hiennguyen.image_picker.util.Utils.isGifFormat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +25,6 @@ class ImageRepository @Inject constructor(@ApplicationContext private val appCon
     private val projections by lazy {
         arrayOf(
             MediaStore.Images.Media.DATA,
-            MediaStore.Images.Media.TITLE,
             MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
             MediaStore.Images.Media.BUCKET_ID,
@@ -49,18 +50,20 @@ class ImageRepository @Inject constructor(@ApplicationContext private val appCon
                     // Get image data
                     val path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA))
 
+                    // Check path and file extension
                     if (!checkFile(path) || (isGifFormat(path) && !config.isIncludeAnimationImage)) continue
 
                     val id = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
-                    val name = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.TITLE))
-                    val nameWithExtension = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
+                    val name = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME))
                     val contentUri = Uri.withAppendedPath(externalContentUri, id.toString()).toString()
 
+                    // Check file name
                     val fileName = when {
-                        nameWithExtension != null -> nameWithExtension
                         name != null -> name
-                        else -> DEFAULT_NAME
+                        getFileName(path) != null -> getFileName(path)
+                        else -> null
                     }
+                    if (fileName.isNullOrBlank()) continue
 
                     val image = Image(id, fileName, path, contentUri)
 
@@ -68,14 +71,25 @@ class ImageRepository @Inject constructor(@ApplicationContext private val appCon
                     var bucket = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME))
                     val bucketId = cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_ID))
 
-                    val folderPath = if (bucket == null) {
-                        bucket = DEFAULT_NAME
-                        ""
-                    } else {
-                        val tempPath = path.substring(0, path.lastIndexOf("$bucket/"))
-                        "$tempPath$bucket/"
+                    // Check folder name
+                    if (bucket == null) {
+                        val parent = File(path).parentFile
+                        bucket = if (parent != null) {
+                            parent.name
+                        } else {
+                            DEFAULT_NAME
+                        }
                     }
 
+                    // Check folder path
+                    val folderPath = if (bucket == DEFAULT_NAME) {
+                        ""
+                    } else {
+                        val parentPath = path.substring(0, path.lastIndexOf(bucket + File.separator))
+                        parentPath + bucket + File.separator
+                    }
+
+                    // Add folder to list
                     if (!imagePaths.contains(bucketId)) {
                         imagePaths.add(bucketId)
                         val imageFolder = ImageFolder(bucketId, bucket, folderPath)
@@ -96,22 +110,12 @@ class ImageRepository @Inject constructor(@ApplicationContext private val appCon
                 Timber.e("Load image failed: ${e.stackTraceToString()}")
                 emit(ResultWrapper.Error(e.stackTraceToString()))
             }
+        } else {
+            emit(ResultWrapper.Success(imageFolders))
         }
+
         emit(ResultWrapper.Done)
     }.flowOn(Dispatchers.IO)
-
-    private fun checkFile(path: String?): Boolean {
-        return if (path == null || path.isEmpty()) {
-            false
-        } else {
-            try {
-                val file = File(path)
-                file.exists()
-            } catch (ignored: Exception) {
-                false
-            }
-        }
-    }
 
     companion object {
         private const val DEFAULT_NAME = "Unknown"

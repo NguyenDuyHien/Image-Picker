@@ -1,6 +1,5 @@
 package com.hiennguyen.image_picker.ui
 
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
 import com.hiennguyen.image_picker.config.ImagePickerConfig
 import com.hiennguyen.image_picker.config.ImagePickerType
@@ -21,7 +20,7 @@ class ImagePickerViewModel @Inject constructor(
     private val repository: ImageRepository
 ) : BaseViewModel<ImagePickerViewModel.ImagePickerIntent, ImagePickerViewModel.ImagePickerState>() {
 
-    private val selectedImages: MutableLiveData<List<Image>> = MutableLiveData()
+    private var selectedImages = mutableListOf<Image>()
 
     //region Overrides
     override fun dispatchIntent(intent: ImagePickerIntent) {
@@ -52,7 +51,7 @@ class ImagePickerViewModel @Inject constructor(
     //endregion
 
     //region Commons
-    fun selectedImages() = selectedImages.value ?: listOf()
+    fun selectedImages(): List<Image> = selectedImages
 
     fun onSelectImage(image: Image, callback: (Image?, Image?) -> Unit) {
         val tempSelectedImages = selectedImages().toMutableList()
@@ -84,7 +83,7 @@ class ImagePickerViewModel @Inject constructor(
             }
         }
 
-        selectedImages.postValue(tempSelectedImages)
+        selectedImages = tempSelectedImages
     }
 
     fun savePickerType(type: ImagePickerType) {

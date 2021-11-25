@@ -11,16 +11,15 @@ import android.view.View
 import android.webkit.MimeTypeMap
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import com.hiennguyen.image_picker.R
+import com.hiennguyen.image_picker.model.Image
+import java.io.File
 
 object Utils {
 
-    fun isGifFormat(path: String): Boolean {
-        val extension = getExtension(path)
-        return extension.equals("gif", ignoreCase = true)
-    }
-
+    //region Common utils
     fun isReadExternalStoragePermissionGranted(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
     }
@@ -47,6 +46,31 @@ object Utils {
         }
         return isAvailable
     }
+    //endregion
+
+    //region File utils
+    fun checkFile(path: String?): Boolean {
+        return if (path == null || path.isEmpty()) {
+            false
+        } else {
+            try {
+                val file = File(path)
+                file.exists()
+            } catch (ignored: Exception) {
+                false
+            }
+        }
+    }
+
+    fun getFileName(path: String?): String? {
+        path ?: return null
+        return File(path).name
+    }
+
+    fun isGifFormat(path: String): Boolean {
+        val extension = getExtension(path)
+        return extension.equals("gif", ignoreCase = true)
+    }
 
     private fun getExtension(path: String): String {
         val extension = MimeTypeMap.getFileExtensionFromUrl(path)
@@ -59,4 +83,20 @@ object Utils {
             ""
         }
     }
+
+    fun Context.getCaptureImage(): Image {
+        val fileName = "capture_image.jpg"
+        val imageDir = File(applicationContext.filesDir.absolutePath + "/images")
+
+        if (!imageDir.exists()) imageDir.mkdirs()
+
+        val imageFile = File(imageDir, fileName)
+
+        if (imageFile.exists()) imageFile.delete()
+        imageFile.createNewFile()
+
+        val contentUri = FileProvider.getUriForFile(this, applicationContext.packageName + ".image_picker.provider", imageFile)
+        return Image(Constants.CAPTURE_IMAGE_ID, fileName, imageFile.absolutePath, contentUri.toString())
+    }
+    //endregion
 }

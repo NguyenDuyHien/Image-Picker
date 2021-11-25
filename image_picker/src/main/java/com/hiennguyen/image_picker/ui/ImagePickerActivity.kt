@@ -20,9 +20,9 @@ import com.hiennguyen.image_picker.config.ImagePickerType
 import com.hiennguyen.image_picker.R
 import com.hiennguyen.image_picker.databinding.ActivityImagePickerBinding
 import com.hiennguyen.image_picker.model.Image
-import com.hiennguyen.image_picker.model.Image.Companion.getCaptureImage
 import com.hiennguyen.image_picker.util.Constants
 import com.hiennguyen.image_picker.util.Utils.checkCameraAvailability
+import com.hiennguyen.image_picker.util.Utils.getCaptureImage
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
